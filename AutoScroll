@@ -7,9 +7,9 @@ game:GetService("RunService").RenderStepped:Connect(function()
         if not game:GetService("CoreGui"):WaitForChild("DevConsoleMaster"):WaitForChild("DevConsoleWindow"):WaitForChild("DevConsoleUI"):WaitForChild("MainView"):WaitForChild("UtilAndTab"):WaitForChild("UtilBar"):WaitForChild("MainRow"):WaitForChild("FilterCheckBoxes"):FindFirstChild("Scroll") then
             auto = game:GetService("CoreGui"):WaitForChild("DevConsoleMaster"):WaitForChild("DevConsoleWindow"):WaitForChild("DevConsoleUI"):WaitForChild("MainView"):WaitForChild("UtilAndTab"):WaitForChild("UtilBar"):WaitForChild("MainRow"):WaitForChild("FilterCheckBoxes"):WaitForChild("Output"):Clone()
             auto.Name = "Scroll"
-            auto.Text.Text = "Scroll"
+            auto.Text.Text = "AutoScroll"
             auto.Parent = game:GetService("CoreGui").DevConsoleMaster.DevConsoleWindow.DevConsoleUI.MainView.UtilAndTab.UtilBar.MainRow.FilterCheckBoxes
-
+            auto.Size = UDim2.new(0,92,0,30)
             if state then
                 auto.Icon.Image = ""
                 auto.Icon.BackgroundColor3 = Color3.fromRGB(78, 84, 96)
