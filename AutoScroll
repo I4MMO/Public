@@ -1,0 +1,45 @@
+repeat
+    task.wait()
+until game:IsLoaded()
+local state = true
+local auto = nil 
+game:GetService("RunService").RenderStepped:Connect(function()
+        if not game:GetService("CoreGui"):WaitForChild("DevConsoleMaster"):WaitForChild("DevConsoleWindow"):WaitForChild("DevConsoleUI"):WaitForChild("MainView"):WaitForChild("UtilAndTab"):WaitForChild("UtilBar"):WaitForChild("MainRow"):WaitForChild("FilterCheckBoxes"):FindFirstChild("Scroll") then
+            auto = game:GetService("CoreGui"):WaitForChild("DevConsoleMaster"):WaitForChild("DevConsoleWindow"):WaitForChild("DevConsoleUI"):WaitForChild("MainView"):WaitForChild("UtilAndTab"):WaitForChild("UtilBar"):WaitForChild("MainRow"):WaitForChild("FilterCheckBoxes"):WaitForChild("Output"):Clone()
+            auto.Name = "Scroll"
+            auto.Text.Text = "Scroll"
+            auto.Parent = game:GetService("CoreGui").DevConsoleMaster.DevConsoleWindow.DevConsoleUI.MainView.UtilAndTab.UtilBar.MainRow.FilterCheckBoxes
+
+            if state then
+                auto.Icon.Image = ""
+                auto.Icon.BackgroundColor3 = Color3.fromRGB(78, 84, 96)
+                auto.Icon.BorderColor3 = Color3.fromRGB(255, 255, 255)
+                auto.Icon.BorderSizePixel = 1
+            else
+                auto.Icon.Image = "rbxasset://textures/ui/LuaChat/icons/ic-check.png"
+                auto.Icon.BackgroundColor3 = Color3.fromRGB(50, 181, 255)
+                auto.Icon.BorderColor3 = Color3.fromRGB(27, 42, 53)
+                auto.Icon.BorderSizePixel = 0
+            end
+
+            auto.Activated:Connect(function()
+                    state = not state
+                    if state then
+                        auto.Icon.Image = ""
+                        auto.Icon.BackgroundColor3 = Color3.fromRGB(78, 84, 96)
+                        auto.Icon.BorderColor3 = Color3.fromRGB(255, 255, 255)
+                        auto.Icon.BorderSizePixel = 1
+                    else
+                        auto.Icon.Image = "rbxasset://textures/ui/LuaChat/icons/ic-check.png"
+                        auto.Icon.BackgroundColor3 = Color3.fromRGB(50, 181, 255)
+                        auto.Icon.BorderColor3 = Color3.fromRGB(27, 42, 53)
+                        auto.Icon.BorderSizePixel = 0
+                    end
+                end)
+            end
+
+        if auto and auto.Icon and auto.Icon.Image == "rbxasset://textures/ui/LuaChat/icons/ic-check.png" then
+            game:GetService("CoreGui").DevConsoleMaster.DevConsoleWindow.DevConsoleUI.MainView.ClientLog.CanvasPosition =
+            Vector2.new(0,game:GetService("CoreGui").DevConsoleMaster.DevConsoleWindow.DevConsoleUI.MainView.ClientLog.CanvasSize.Y.Offset)
+    end
+end)
