@@ -8,8 +8,8 @@ local makestring = clonefunction(tostring)
 local caller = clonefunction(checkcaller)
 local typeof = clonefunction(typeof)
       consoleprint = clonefunction(consoleprint)
-
 local Request = clonefunction(request)
+local HttpRequest = clonefunction(http.request)
 local HttpGet = clonefunction(game.HttpGet)
 local HttpGetAsync = clonefunction(game.HttpGetAsync)
 local getnamecallmethod = clonefunction(getnamecallmethod)
@@ -20,9 +20,23 @@ local match = clonefunction(string.match)
 local date = clonefunction(os.date)
 local time = clonefunction(os.time)
 
+local freeze = function(state,tbl)
+    if state then 
+        local lock = makereadonly or setreadonly
+        return lock(tbl,state)
+    end 
+
+    local unlock = makewriteable or setreadonly
+
+    return unlock(tbl,state)
+        
+
+end 
+
 create()
 settitle("Http Spy")
 consoleclear()
+
 
 local OutputInfo = function(...)
     local args = {...}
@@ -47,13 +61,26 @@ end
 
 getgenv().request = newcclosure(function(...)
     local Req = ... 
-
     if Req.Url and IsString(Req.Url) and IsUrl(Req.Url) and ValidSize(Req.Url) then 
-        OutputInfo("Request URL:", Req.Url)
+        OutputInfo("Requested URL:", Req.Url)
     end
 
     return Request(...)
 end)
+
+freeze(false,http)
+
+http.request = newcclosure(function(...)
+    local Req = ... 
+
+    if Req.Url and IsString(Req.Url) and IsUrl(Req.Url) and ValidSize(Req.Url) then 
+        OutputInfo("Http Requested URL:", Req.Url)
+    end
+
+    return HttpRequest(...)
+end)
+
+freeze(true,http)
 
 local NewHttpGet = newcclosure(function(self,url,...)
     if url and IsString(url) and IsUrl(url) and ValidSize(url) then 
@@ -73,13 +100,21 @@ end)
 
 local Methods = {
     ["HttpGet"] = NewHttpGet,
-    ["HttpGetAsync"] = NewHttpGetAsync
+    ["HttpGetAsync"] = NewHttpGetAsync,
+}
+
+local RequestFunctions = {
+    request,
+    http.request,
 }
 
 
 if setname then 
     for i , v in pairs(Methods) do 
         setname(v, i)
+    end 
+    for _ , v in pairs(RequestFunctions) do 
+        setname(v,"request")
     end 
 end 
 
