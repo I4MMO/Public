@@ -20,17 +20,13 @@ local match = clonefunction(string.match)
 local date = clonefunction(os.date)
 local time = clonefunction(os.time)
 
-local freeze = function(state,tbl)
+local SetTableFrozen = function(state,tbl)
     if state then 
-        local lock = makereadonly or setreadonly
-        return lock(tbl,state)
+        return table.freeze(tbl)
     end 
-
-    local unlock = makewriteable or setreadonly
-
-    return unlock(tbl,state)
-        
-
+    if table.isfrozen(tbl) then 
+        return setreadonly(tbl,false)
+    end 
 end 
 
 create()
@@ -68,7 +64,7 @@ getgenv().request = newcclosure(function(...)
     return Request(...)
 end)
 
-freeze(false,http)
+SetTableFrozen(false,http)
 
 http.request = newcclosure(function(...)
     local Req = ... 
@@ -80,7 +76,7 @@ http.request = newcclosure(function(...)
     return HttpRequest(...)
 end)
 
-freeze(true,http)
+SetTableFrozen(true,http)
 
 local NewHttpGet = newcclosure(function(self,url,...)
     if url and IsString(url) and IsUrl(url) and ValidSize(url) then 
