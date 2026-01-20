@@ -3,6 +3,8 @@ local settitle = consolesettitle or rconsolesettitle
 local consoleclear = consoleclear or rconsoleclear
 local consoleprint = consoleprint or rconsoleprint
 
+local Nope = function() return "no" end 
+
 local clonefunction = clonefunction or function(f) return f end
 local makestring = clonefunction(tostring)
 local caller = clonefunction(checkcaller)
@@ -12,13 +14,28 @@ local Request = clonefunction(request)
 local HttpRequest = clonefunction(http.request)
 local HttpGet = clonefunction(game.HttpGet)
 local HttpGetAsync = clonefunction(game.HttpGetAsync)
+local HttpPostAsync = clonefunction(game.HttpPostAsync)
 local getnamecallmethod = clonefunction(getnamecallmethod)
 local select = clonefunction(select)
 local pairs = clonefunction(pairs)
 local match = clonefunction(string.match)
 
+local makecclosure = clonefunction(newcclosure)
+local isc = clonefunction(iscclosure)
+
+local getrawmetatable = clonefunction(getrawmetatable or getmetatable)
+
+local OldHttpGet = clonefunction(HttpGet or Nope)
+
+local pcall = clonefunction(pcall)
 local date = clonefunction(os.date)
 local time = clonefunction(os.time)
+
+local ENV = getgenv()
+
+local cloneref = cloneref or function(f) return f end
+
+local HttpService = cloneref(game:GetService("HttpService"))
 
 local SetTableFrozen = function(state,tbl)
     if state then 
@@ -55,54 +72,126 @@ local ValidSize = function(value)
     return #value < 500
 end 
 
-getgenv().request = newcclosure(function(...)
-    local Req = ... 
-    if Req.Url and IsString(Req.Url) and IsUrl(Req.Url) and ValidSize(Req.Url) then 
-        OutputInfo("Requested URL:", Req.Url)
-    end
+local suc, er = pcall(OldHttpGet)
+local Exists = er ~= "no"
 
+if Exists then 
+    ENV.HttpGet = makecclosure(function(url,...)
+        if url and IsString(url) and IsUrl(url) and ValidSize(url) then 
+            OutputInfo("HttpGet URL:", url)
+        end
+
+        return OldHttpGet(url,...)
+    end)
+end 
+
+ENV.request = makecclosure(function(...)
+    local Req = ... 
+    if getrawmetatable(Req) then 
+        OutputInfo("Weird Request Could not be logged")
+    else 
+        if typeof(Req) == "table" then 
+            local HasUrl = Req and rawget(Req,"Url")
+            print(HasUrl)
+            if HasUrl then 
+                if IsString(HasUrl) and IsUrl(HasUrl) and ValidSize(HasUrl) then 
+                    OutputInfo("Requested URL:", HasUrl)
+                end
+            end 
+        end 
+    end
     return Request(...)
 end)
 
 SetTableFrozen(false,http)
 
-http.request = newcclosure(function(...)
+http.request = makecclosure(function(...)
     local Req = ... 
-
-    if Req.Url and IsString(Req.Url) and IsUrl(Req.Url) and ValidSize(Req.Url) then 
-        OutputInfo("Http Requested URL:", Req.Url)
-    end
+    if getrawmetatable(Req) then 
+        OutputInfo("Weird Request Could not be logged")
+    else 
+        if typeof(Req) == "table" then 
+            local HasUrl = Req and rawget(Req,"Url")
+            if HasUrl then 
+                if IsString(HasUrl) and IsUrl(HasUrl) and ValidSize(HasUrl) then 
+                    OutputInfo("Http Requested URL:", HasUrl)
+                end
+            end 
+        end 
+    end  
 
     return HttpRequest(...)
 end)
 
 SetTableFrozen(true,http)
 
-local NewHttpGet = newcclosure(function(self,url,...)
+local NewHttpGet = makecclosure(function(self,url,...)
     if url and IsString(url) and IsUrl(url) and ValidSize(url) then 
         OutputInfo("HttpGet URL:", url)
     end
-
     return HttpGet(self,url,...)
 end)
 
-local NewHttpGetAsync = newcclosure(function(self,url,...)
+local NewHttpGetAsync = makecclosure(function(self,url,...)
     if url and IsString(url) and IsUrl(url) and ValidSize(url) then 
         OutputInfo("HttpGetAsync URL:", url)
     end
-
     return HttpGetAsync(self,url,...)
 end)
+
+local NewHttpPostAsync = makecclosure(function(self,url,...)
+    if url and IsString(url) and IsUrl(url) and ValidSize(url) then 
+        OutputInfo("HttpGetAsync URL:", url)
+    end
+    return HttpPostAsync(self,url,...)
+end)
+
+
 
 local Methods = {
     ["HttpGet"] = NewHttpGet,
     ["HttpGetAsync"] = NewHttpGetAsync,
+    ["HttpPostAsync"] = NewHttpPostAsync,
 }
 
 local RequestFunctions = {
     request,
     http.request,
 }
+
+local Closures = {}
+
+if isnewcclosure then 
+    ENV.newcclosure = makecclosure(function(...)
+
+        if ... then 
+            local Arg = select(1,...)
+            if typeof(Arg) == "function" and not isc(Arg) then 
+                if not Closures[Arg] then 
+                    Closures[#Closures + 1] = Arg
+                end 
+            end 
+        end 
+    
+        return makecclosure(...)
+    end)
+
+    ENV.isnewcclosure = makecclosure(function(...)
+        if ... then 
+            local Arg = select(1,...)
+            if typeof(Arg) == "function" and isc(Arg) then 
+                return Closures[Arg] or false 
+            end 
+        end 
+
+        return false 
+    end)
+    if setname then 
+        setname(newcclosure,"newccclosure")
+        setname(isnewcclosure,"isnewcclosure")
+    end 
+
+end 
 
 
 if setname then 
@@ -114,11 +203,15 @@ if setname then
     end 
 end 
 
-local Index; Index = hookmetamethod(game, "__index", newcclosure(function(...)
+if Exists then 
+    setname(HttpGet,"HttpGet")
+end
+
+local Index; Index = hookmetamethod(game, "__index", makecclosure(function(...)
     if caller() then 
         local self, key = ...
 
-        if self == game then 
+        if self == game or self == HttpService then 
             local method = Methods[key]
             if method then 
                 return method
@@ -129,11 +222,11 @@ local Index; Index = hookmetamethod(game, "__index", newcclosure(function(...)
     return Index(...)
 end))
 
-local Namecall; Namecall = hookmetamethod(game, "__namecall", newcclosure(function(...)
+local Namecall; Namecall = hookmetamethod(game, "__namecall", makecclosure(function(...)
     if caller() then 
         local self = select(1,...)
         local method = getnamecallmethod()
-        if self == game then
+        if self == game or self == HttpService then
             local IsValidMethod = Methods[method]
             if IsValidMethod then 
                 local url = select(2,...)
