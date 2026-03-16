@@ -75,7 +75,7 @@ end
 local suc, er = pcall(OldHttpGet)
 local Exists = er ~= "no"
 
-if Exists then 
+if Exists and setname then 
     ENV.HttpGet = makecclosure(function(url,...)
         if url and IsString(url) and IsUrl(url) and ValidSize(url) then 
             OutputInfo("HttpGet URL:", url)
