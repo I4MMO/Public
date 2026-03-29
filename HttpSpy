@@ -11,6 +11,7 @@ local caller = clonefunction(checkcaller)
 local typeof = clonefunction(typeof)
       consoleprint = clonefunction(consoleprint)
 local Request = clonefunction(request)
+local Http_Request = clonefunction(http_request)
 local HttpRequest = clonefunction(http.request)
 local HttpGet = clonefunction(game.HttpGet)
 local HttpGetAsync = clonefunction(game.HttpGetAsync)
@@ -102,6 +103,28 @@ ENV.request = makecclosure(function(...)
     end
     return Request(...)
 end)
+
+if http.request ~= http_request then 
+    ENV.http_request = makecclosure(function(...)
+
+        local Req = ... 
+
+        if getrawmetatable(Req) then 
+            OutputInfo("Weird Request Could not be logged")
+        else 
+            if typeof(Req) == "table" then 
+                local HasUrl = Req and rawget(Req,"Url")
+                if HasUrl then 
+                    if IsString(HasUrl) and IsUrl(HasUrl) and ValidSize(HasUrl) then 
+                        OutputInfo("Http Requested URL:", HasUrl)
+                    end
+                end 
+            end 
+        end  
+        return Http_Request(...)
+    end)
+
+end 
 
 SetTableFrozen(false,http)
 
@@ -201,6 +224,7 @@ if setname then
     for _ , v in pairs(RequestFunctions) do 
         setname(v,"request")
     end 
+    setname(http_request,"http_request")
 end 
 
 if Exists then 
